@@ -1,0 +1,16 @@
+{
+  "name": "scrolltail",
+  "version": "1.0.0",
+  "description": "Class-based scroll animation library for HTML5 banners",
+  "main": "dist/scrolltail.min.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "peerDependencies": {
+    "gsap": "^3.12.0"
+  }
+}
