@@ -13,6 +13,10 @@ const DELAY = {
   'st-delay-300': 0.3, 'st-delay-400': 0.4, 'st-delay-500': 0.5,
   'st-delay-750': 0.75, 'st-delay-1000': 1.0
 }
+const OVERLAP = {
+  'st-overlap-100': -0.1, 'st-overlap-200': -0.2,
+  'st-overlap-300': -0.3, 'st-overlap-500': -0.5
+}
 const EASE  = {
   'st-ease-linear':  'none',
   'st-ease-in':      'power2.in',
@@ -53,13 +57,14 @@ function parseClasses(el) {
   const visible  = Object.entries(VISIBLE).find(([k]) => cls.contains(k))?.[1]  ?? 0.5
   const parallax = Object.entries(PARALLAX).find(([k]) => cls.contains(k))?.[1] ?? null
 
-  const repeat = cls.contains('st-repeat')
-  const scroll = cls.contains('st-scroll')
+  const repeat  = cls.contains('st-repeat')
+  const scroll  = cls.contains('st-scroll')
+  const overlap = Object.entries(OVERLAP).find(([k]) => cls.contains(k))?.[1] ?? null
 
   const orderMatch = [...cls].find(c => /^st-order-(\d)$/.test(c))
   const order = orderMatch ? parseInt(orderMatch.replace('st-order-', ''), 10) : null
 
-  return { type, dist, dur, delay, ease, visible, parallax, repeat, scroll, order }
+  return { type, dist, dur, delay, ease, visible, parallax, repeat, scroll, order, overlap }
 }
 
 // --- fromState ------------------------------------------------------------
@@ -169,13 +174,11 @@ function buildTimeline(orderedEls) {
     const config = parseClasses(el)
     const from = buildFromState(config)
     const vars = { duration: config.dur, ease: config.ease }
-    const position = config.delay > 0 ? `+=${config.delay}` : undefined
+    let position
+    if (config.overlap !== null)  position = `${config.overlap}`  // e.g. "-=0.2"
+    else if (config.delay > 0)    position = `+=${config.delay}`
 
-    if (position) {
-      tl.from(el, { ...from, ...vars }, position)
-    } else {
-      tl.from(el, { ...from, ...vars })
-    }
+    tl.from(el, { ...from, ...vars }, position)
   })
 
   timelines.push(tl)

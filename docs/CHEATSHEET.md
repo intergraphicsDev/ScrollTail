@@ -1,272 +1,201 @@
-# ScrollTail — Class Reference
+# ScrollTail — Designerguide
 
-**Scroll-behaviors til HTML5 bannere**  
-ScrollTail lytter på scroll. GSAP animerer. Hype håndterer alt andet.
+Tilføj scroll-animationer i Hype med klasser — ingen JavaScript.
 
 ---
 
-## Hurtig start
+## 1. Opsætning
+
+Indsæt i `Document Inspector → Head HTML`:
 
 ```html
-<!-- Head HTML (Hype: Document Inspector → Head HTML) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/moire/ScrollTail@1.0/dist/scrolltail.min.js"></script>
-
-<!-- Klasser på element (Hype: Element Inspector → Additional HTML Attributes → class) -->
-<div class="st-fade-up">Animeret element</div>
+<script src="https://cdn.jsdelivr.net/gh/intergraphicsDev/ScrollTail@1.0/dist/scrolltail.min.js"></script>
 ```
 
-Et element med en `st-*` animationsklasse scroll-triggers automatisk. Ingen ekstra klasse kræves.
+Sæt klasser på elementer via `Element Inspector → Additional HTML Attributes → class`.
 
 ---
 
-## Klasser
+## 2. Hurtig start — copy/paste direkte
+
+```
+Simpel fade:        st-fade-up
+Fade med stil:      st-fade-up st-dur-1000 st-ease-spring
+Slide ind:          st-slide-left st-dur-600 st-ease-bounce
+Scale op:           st-scale st-dur-600 st-ease-spring
+Blur ind:           st-blur st-dur-1000 st-ease-out
+Med forsinkelse:    st-fade-up st-dur-600 st-delay-300
+Repeat (frem/bag):  st-fade-up st-repeat
+Scroll frem/tilbage: st-fade-up st-scroll
+
+Sekvens (kører efter hinanden):
+  Element 1 → st-fade-up st-dur-600 st-order-1
+  Element 2 → st-fade-up st-dur-600 st-order-2
+  Element 3 → st-scale   st-dur-600 st-order-3 st-delay-200
+```
 
 ---
 
-### 1. Animationstype — hvad sker der?
+## 3. Alle klasser
 
-Vælg én. Elementet scroll-triggers automatisk.
+### Animation — hvad sker der?
+Vælg én. Elementet animerer automatisk når det scrolles ind.
 
-| Klasse | Beskrivelse |
+| Klasse | Effekt |
 |---|---|
 | `st-fade` | Fade ind |
-| `st-fade-up` | Fade ind nedefra og op |
-| `st-fade-down` | Fade ind ovenfra og ned |
-| `st-fade-left` | Fade ind fra højre mod venstre |
-| `st-fade-right` | Fade ind fra venstre mod højre |
+| `st-fade-up` | Fade ind nedefra |
+| `st-fade-down` | Fade ind ovenfra |
+| `st-fade-left` | Fade ind fra højre |
+| `st-fade-right` | Fade ind fra venstre |
 | `st-slide-left` | Slide ind fra højre — ingen fade |
 | `st-slide-right` | Slide ind fra venstre — ingen fade |
 | `st-scale` | Skaler ind fra 0 |
 | `st-rotate` | Rotér ind fra -15deg |
 | `st-blur` | Fade ind fra sløret til skarp |
 
----
+### Duration — hvor lang tid?
+Standard: `st-dur-600`
 
-### 2. Scroll-adfærd — hvordan reagerer det på scroll?
-
-Sættes **kun** når du vil afvige fra default.
-
-| Klasse | Adfærd |
-|---|---|
-| *(ingen)* | Trigger én gang når elementet ses — **default** |
-| `st-repeat` | Trigger igen ved hvert scroll ind og ud |
-| `st-scroll` | Bind animation til scroll-position — kører frem og tilbage |
-
-**`st-scroll` virker i alle banner-miljøer** — Google, Adform, Bannersnack og selvhostede sider.
-
-I iframes bruges bannerets synlighed (0→100%) som scroll-proxy:
-```
-Banner glider ind i viewport  → animation kører frem
-Banner forlader viewport      → animation kører baglæns
-```
-
----
-
-### 3. Rækkefølge — skal elementer kører efter hinanden?
-
-Elementer med `st-order-*` samles i én GSAP timeline og kører sekventielt.  
-Tidslinjen trigger når elementet med laveste orden scrolles ind.
-
-| Klasse | Beskrivelse |
-|---|---|
-| `st-order-1` | Første — starter tidslinjen ved scroll |
-| `st-order-2` | Starter når order-1 er færdig |
-| `st-order-3` | Starter når order-2 er færdig |
-| `st-order-4` | Starter når order-3 er færdig |
-| `st-order-5` | Starter når order-4 er færdig |
-| `st-order-6` | Starter når order-5 er færdig |
-
----
-
-### 4. Distance — hvor langt bevæger det sig?
-
-Standard: `st-dist-md`.
-
-| Klasse | Afstand |
-|---|---|
-| `st-dist-sm` | 20px |
-| `st-dist-md` | 40px |
-| `st-dist-lg` | 80px |
-| `st-dist-xl` | 120px |
-
----
-
-### 5. Duration — hvor lang tid tager det?
-
-Standard: `st-dur-600`.
-
-| Klasse | Varighed |
+| Klasse | Tid |
 |---|---|
 | `st-dur-300` | 300ms — hurtig |
 | `st-dur-600` | 600ms — normal |
 | `st-dur-1000` | 1000ms — langsom |
 | `st-dur-1600` | 1600ms — meget langsom |
 
----
+### Easing — hvilken bevægelsesfornemmelse?
+Standard: `st-ease-out`
 
-### 6. Easing — hvordan bevæger det sig?
-
-Standard: `st-ease-out`.
-
-| Klasse | Følelse |
+| Klasse | Fornemmelse |
 |---|---|
-| `st-ease-linear` | Konstant hastighed |
-| `st-ease-in` | Starter langsomt, accelererer |
-| `st-ease-out` | Starter hurtigt, decelererer — naturlig |
-| `st-ease-in-out` | Langsomt i begge ender |
+| `st-ease-linear` | Konstant |
+| `st-ease-in` | Starter langsomt |
+| `st-ease-out` | Decelererer — naturlig |
+| `st-ease-in-out` | Blød i begge ender |
 | `st-ease-bounce` | Lille overshoot — legende |
-| `st-ease-spring` | Elastisk overshoot — organisk |
+| `st-ease-spring` | Elastisk — organisk |
 
----
+### Delay — vent inden start
+Standard: ingen delay
 
-### 7. Delay — skal det vente?
-
-På et enkelt element: forsinkelse inden animationen starter.  
-På et element med `st-order-*`: ekstra pause efter forrige element.
-
-| Klasse | Forsinkelse |
+| Klasse | Vent |
 |---|---|
-| `st-delay-0` | 0ms |
 | `st-delay-100` | 100ms |
 | `st-delay-200` | 200ms |
 | `st-delay-300` | 300ms |
-| `st-delay-400` | 400ms |
 | `st-delay-500` | 500ms |
 | `st-delay-750` | 750ms |
 | `st-delay-1000` | 1000ms |
 
----
+### Distance — hvor langt bevæger det sig?
+Standard: `st-dist-md`
 
-### 8. Visibility threshold — hvornår trigges det?
-
-Hvor meget af elementet der skal ses. Standard: `st-visible-50`.
-
-| Klasse | Synlig andel |
+| Klasse | Afstand |
 |---|---|
-| `st-visible-0` | 0% — trigger ved kanten |
-| `st-visible-25` | 25% |
-| `st-visible-50` | 50% |
-| `st-visible-75` | 75% |
+| `st-dist-sm` | 20px — subtil |
+| `st-dist-md` | 40px |
+| `st-dist-lg` | 80px |
+| `st-dist-xl` | 120px — dramatisk |
 
----
+### Scroll-adfærd
+Tilføj kun hvis du vil noget andet end default.
 
-### 9. Parallax — bevæg i andet tempo end scroll
+| Klasse | Hvad sker der |
+|---|---|
+| *(ingen)* | Animerer én gang når elementet ses — **default** |
+| `st-repeat` | Animerer igen ved hvert scroll ind og ud |
+| `st-scroll` | Bundet til scroll — kører frem og baglæns |
 
+### Rækkefølge — sekvens
+Elementer med `st-order-*` kører automatisk efter hinanden.
+
+| Klasse | Position |
+|---|---|
+| `st-order-1` | Starter tidslinjen |
+| `st-order-2` | Starter når 1 er færdig |
+| `st-order-3` | Starter når 2 er færdig |
+| `st-order-4` | Starter når 3 er færdig |
+| `st-order-5` | Starter når 4 er færdig |
+| `st-order-6` | Starter når 5 er færdig |
+
+**Timing-justeringer på ordnede elementer:**
+
+| Klasse | Effekt |
+|---|---|
+| `st-delay-100` | Venter 100ms *efter* forrige er færdig |
+| `st-delay-200` | Venter 200ms *efter* forrige er færdig |
+| `st-delay-300` | Venter 300ms *efter* forrige er færdig |
+| `st-delay-500` | Venter 500ms *efter* forrige er færdig |
+| `st-overlap-100` | Starter 100ms *inden* forrige er færdig |
+| `st-overlap-200` | Starter 200ms *inden* forrige er færdig |
+| `st-overlap-300` | Starter 300ms *inden* forrige er færdig |
+| `st-overlap-500` | Starter 500ms *inden* forrige er færdig |
+
+> `st-delay-*` og `st-overlap-*` virker kun på elementer med `st-order-*`.
+
+### Trigger — hvornår startes animationen?
+Standard: 50% synligt. Tilføj kun hvis du vil ændre det.
+
+| Klasse | Trigger når |
+|---|---|
+| `st-visible-0` | Kanten af elementet ses |
+| `st-visible-25` | 25% er synligt |
+| `st-visible-50` | 50% er synligt |
+| `st-visible-75` | 75% er synligt |
+
+### Parallax — bevæg i andet tempo
 Kræver `st-scroll`. Virker i alle banner-miljøer.
 
-| Klasse | Hastighed |
+| Klasse | Effekt |
 |---|---|
-| `st-parallax-slow` | Langsommere end scroll — baggrundseffekt |
+| `st-parallax-slow` | Langsommere — baggrundseffekt |
 | `st-parallax-med` | Halvt tempo |
-| `st-parallax-fast` | Hurtigere end scroll — forgrundseffekt |
+| `st-parallax-fast` | Hurtigere — forgrundseffekt |
 | `st-parallax-reverse` | Modsat retning |
 
-> På selvhostede sider (ikke iframe) kræver parallax et ekstra script-tag:
-> ```html
-> <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-> ```
-
 ---
 
-## Eksempler
+## 4. Eksempler
 
----
-
-### Eksempel 1 — Minimum
-
+### Simpel fade
 ```
 class: st-fade-up
 ```
 
----
-
-### Eksempel 2 — Med parametre
-
+### Med parametre
 ```
 class: st-fade-up st-dist-lg st-dur-1000 st-ease-spring
 ```
 
----
-
-### Eksempel 3 — Sekventiel animation
-
-Elementer kører efter hinanden. Tidslinjen starter når order-1 ses.
-
-```
-Overskrift:      st-fade-up    st-dur-1000  st-ease-spring  st-order-1
-Underoverskrift: st-fade-up    st-dur-600   st-ease-out     st-order-2
-CTA-knap:        st-scale      st-dur-600   st-ease-spring  st-order-3  st-delay-200
-```
-
-Tidslinje:
-```
-0ms      Overskrift starter       (scroll trigger)
-1000ms   Underoverskrift starter  (efter order-1 er færdig)
-1800ms   CTA starter              (efter order-2 + 200ms ekstra pause)
-```
-
----
-
-### Eksempel 4 — Komplet banner-scene
-
-```html
-<!-- Head HTML — ~33 KB total -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/moire/ScrollTail@1.0/dist/scrolltail.min.js"></script>
-```
+### Sekvens — elementer kører efter hinanden
 
 | Element | class |
 |---|---|
-| Overskrift | `st-fade-up st-dist-lg st-dur-1000 st-ease-spring st-order-1` |
-| Underoverskrift | `st-fade-up st-dist-md st-dur-600 st-ease-out st-order-2` |
-| Fordel 1 | `st-fade-right st-dist-sm st-dur-300 st-ease-bounce st-order-3` |
-| Fordel 2 | `st-fade-right st-dist-sm st-dur-300 st-ease-bounce st-order-4` |
-| Fordel 3 | `st-fade-right st-dist-sm st-dur-300 st-ease-bounce st-order-5` |
+| Overskrift | `st-fade-up st-dur-1000 st-ease-spring st-order-1` |
+| Underoverskrift | `st-fade-up st-dur-600 st-ease-out st-order-2` |
+| Fordel 1 | `st-fade-right st-dur-300 st-ease-bounce st-order-3` |
+| Fordel 2 | `st-fade-right st-dur-300 st-ease-bounce st-order-4` |
+| Fordel 3 | `st-fade-right st-dur-300 st-ease-bounce st-order-5` |
 | CTA-knap | `st-scale st-dur-600 st-ease-spring st-order-6 st-delay-200` |
 
-ScrollTail bygger automatisk én GSAP timeline ud fra `st-order-*`.
+Tidslinje: order-1 starter ved scroll → hvert element kører når det forrige er færdigt → CTA venter 200ms ekstra.
 
----
-
-### Eksempel 5 — Parallax baggrund
+### Parallax + scroll-scene
 
 ```html
-<!-- Head HTML — ~61 KB med ScrollTrigger -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<!-- Tilføj ScrollTrigger til Head HTML for selvhostede sider -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/moire/ScrollTail@1.0/dist/scrolltail.min.js"></script>
 ```
 
 | Element | class |
 |---|---|
 | Baggrundsbillede | `st-scroll st-parallax-slow` |
-| Overskrift | `st-fade-up st-dur-1000 st-ease-spring st-order-1` |
-| CTA-knap | `st-scale st-dur-600 st-ease-spring st-order-2` |
+| Overskrift | `st-scroll st-fade-up st-order-1` |
+| CTA-knap | `st-scroll st-scale st-order-2` |
 
----
-
-### Eksempel 6 — Repeat
-
+### Repeat — animerer frem og tilbage ved hvert scroll
 ```
 class: st-fade-up st-repeat st-dur-600 st-ease-out
-```
-
----
-
-## Quick-copy
-
-```
-Fade op:           st-fade-up
-Fade op med stil:  st-fade-up st-dist-lg st-dur-1000 st-ease-spring
-Slide ind:         st-slide-left st-dist-md st-dur-600 st-ease-bounce
-Scale op:          st-scale st-dur-600 st-ease-spring
-Med forsinkelse:   st-fade-up st-dur-600 st-delay-300
-Repeat:            st-fade-up st-repeat
-Parallax:          st-scroll st-parallax-slow
-
-Sekvens:
-  st-fade-up st-order-1
-  st-fade-up st-order-2
-  st-scale   st-order-3 st-delay-200
 ```
