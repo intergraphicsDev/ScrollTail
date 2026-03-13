@@ -54,10 +54,6 @@ Add classes to elements. No JavaScript required.
 | `st-slide-down` | Move downward |
 | `st-slide-left` | Move left |
 | `st-slide-right` | Move right |
-| `st-parallax-up` | Subtle upward movement without fade |
-| `st-parallax-down` | Subtle downward movement without fade |
-| `st-parallax-left` | Subtle left movement without fade |
-| `st-parallax-right` | Subtle right movement without fade |
 | `st-scale` | Scale from 0 |
 | `st-blur` | Unblur from blurred |
 | `st-rotate` | Rotate in |
@@ -74,8 +70,8 @@ Add classes to elements. No JavaScript required.
 |---|---|
 | *(none)* | Scrub forward and backward (default) |
 | `st-once` | Play once, stay visible |
-| `st-forward` | Play forward, reset on scroll back |
-| `st-reverse` | Start visible, disappear on scroll down |
+| `st-reset` | Play forward, reset on scroll back |
+| `st-exit` | Start visible, disappear on scroll down |
 
 ### Scrub lag
 | Class | Lag |
@@ -96,18 +92,23 @@ Add classes to elements. No JavaScript required.
 | `st-end-20` | 20% from top — **default** |
 | `st-end-0` | Top of viewport |
 
-### Distance
+### Move
 | Class | Distance |
 |---|---|
-| `st-dist-20` | 20px |
-| `st-dist-40` | 40px (default) |
-| `st-dist-80` | 80px |
-| `st-dist-120` | 120px |
+| `st-move-20` | 20px |
+| `st-move-40` | 40px (default) |
+| `st-move-80` | 80px |
+| `st-move-120` | 120px |
 
 ### Pin
 | Class | Effect |
 |---|---|
 | `st-pin` | Pin element while scrolling past (not available in iframes) |
+
+### Debug
+| Class | Effect |
+|---|---|
+| `st-debug` | Show ScrollTrigger start/end markers — remove before production |
 
 ### Duration (with `st-once`)
 `st-dur-300` / `st-dur-600` / `st-dur-1000` / `st-dur-1600`
@@ -133,6 +134,7 @@ ScrollTail auto-detects iframe environments (Google, Adform) and switches to Int
 | Scrub | ScrollTrigger | IO intersectionRatio |
 | `st-once` | ScrollTrigger | IO threshold |
 | `st-pin` | ScrollTrigger | Ignored |
+| `st-debug` | ScrollTrigger markers | Ignored |
 
 ---
 

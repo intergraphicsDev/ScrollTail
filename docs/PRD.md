@@ -37,14 +37,10 @@ Definerer det visuelle. Kombineres med retning.
 
 ```
 st-fade       opacity 0 ↔ 1
-st-slide-up   y: +dist ↔ 0
-st-slide-down y: -dist ↔ 0
-st-slide-left x: +dist ↔ 0
-st-slide-right x: -dist ↔ 0
-st-parallax-up    y: +dist ↔ 0 (ingen fade)
-st-parallax-down  y: -dist ↔ 0 (ingen fade)
-st-parallax-left  x: +dist ↔ 0 (ingen fade)
-st-parallax-right x: -dist ↔ 0 (ingen fade)
+st-slide-up   y: +move ↔ 0
+st-slide-down y: -move ↔ 0
+st-slide-left x: +move ↔ 0
+st-slide-right x: -move ↔ 0
 st-scale      scale: 0, opacity: 0 ↔ natural
 st-blur       filter: blur(12px), opacity: 0 ↔ natural
 st-rotate     rotation: -15, opacity: 0 ↔ natural
@@ -62,10 +58,10 @@ st-from st-to    gsap.fromTo() — starter udenfor, passerer igennem og ud
 ### Scroll-type → toggleActions
 
 ```
-(ingen)      scrub: true                                          (frem+tilbage, default)
-st-once      once: true                                           (én gang)
-st-forward   toggleActions: "play none none reset"               (frem, nulstil)
-st-reverse   toggleActions: "reverse play play reverse"          (omvendt)
+(ingen)    scrub: true                                       (frem+tilbage, default)
+st-once    once: true                                        (én gang)
+st-reset   toggleActions: "play none none reset"             (frem, nulstil)
+st-exit    toggleActions: "reverse play play reverse"        (starter synlig, forsvinder)
 ```
 
 ### Scrub-lag
@@ -92,13 +88,13 @@ st-end-20     end: "bottom 20%"   (default)
 st-end-0      end: "bottom 0%"
 ```
 
-### Distance
+### Move
 
 ```
-st-dist-20    20px
-st-dist-40    40px (default)
-st-dist-80    80px
-st-dist-120   120px
+st-move-20    20px
+st-move-40    40px (default)
+st-move-80    80px
+st-move-120   120px
 ```
 
 ### Edge — animér til containerkant
@@ -114,18 +110,24 @@ st-slide-right + st-edge-*  → højre kant
 
 Implementering i `edgeDistance(el, anim, offset)`:
 ```javascript
-case 'st-slide-down':  return container.offsetHeight - (el.offsetTop + el.offsetHeight) - edgeOffset
-case 'st-slide-up':    return -(el.offsetTop - edgeOffset)
-case 'st-slide-left':  return -(el.offsetLeft - edgeOffset)
-case 'st-slide-right': return container.offsetWidth - (el.offsetLeft + el.offsetWidth) - edgeOffset
+case 'st-slide-down':  return container.offsetHeight - (el.offsetTop + el.offsetHeight) - offset
+case 'st-slide-up':    return -(el.offsetTop - offset)
+case 'st-slide-left':  return -(el.offsetLeft - offset)
+case 'st-slide-right': return container.offsetWidth - (el.offsetLeft + el.offsetWidth) - offset
 ```
 
-`st-edge-*` er altid `gsap.to()` — elementet starter på sin placering og animerer til kanten. `st-dist-*` ignoreres når `st-edge-*` er sat.
+`st-edge-*` er altid `gsap.to()` — elementet starter på sin placering og animerer til kanten. `st-move-*` ignoreres når `st-edge-*` er sat.
 
 ### Pin
 
 ```
 st-pin   pin: true (pinSpacing: true)
+```
+
+### Debug
+
+```
+st-debug   markers: true (kun ScrollTrigger, ignoreres i iframes)
 ```
 
 ### Duration og Ease (kun med st-once)
@@ -152,7 +154,7 @@ init()
   ↓
 Scan alle .st-scroll elementer
   ↓
-parseClasses(el) → config objekt
+parseClasses(el) → config objekt (én gang per element via Map)
   ↓
 ┌─────────────────┬──────────────────┐
 │ st-order-* ?    │ Ingen order      │
@@ -164,41 +166,42 @@ parseClasses(el) → config objekt
                      └─ Nej → ScrollTrigger.create()
                                 retning: from/to/fromTo
                                 scrub / toggleActions
-                                start / end
+                                start / end / markers
 ```
 
 ### parseClasses(el) → config
 
 ```javascript
 {
-  anim:     'st-fade' | 'st-slide-up' | ... | null,
-  to:       boolean,   // st-to
-  from:     boolean,   // eksplicit st-from (default true hvis ingen st-to)
-  once:     boolean,
-  forward:  boolean,
-  reverse:  boolean,
-  scrub:    true | 1 | 2,
-  start:    80,        // % — default 80
-  end:      20,        // % — default 20
-  dist:     40,        // px — default 40
-  dur:      0.6,       // sek — default 0.6
-  ease:     'power2.out',
-  delay:    0,
-  overlap:  null,
-  order:    null | 1–6,
-  pin:      boolean
+  anim:    'st-fade' | 'st-slide-up' | ... | null,
+  hasTo:   boolean,
+  hasFrom: boolean,   // default true hvis ingen st-to
+  once:    boolean,
+  reset:   boolean,
+  exit:    boolean,
+  scrub:   true | 1 | 2,
+  start:   80,        // % — default 80
+  end:     20,        // % — default 20
+  move:    40,        // px — default 40
+  dur:     0.6,       // sek — default 0.6
+  ease:    'power2.out',
+  delay:   0,
+  overlap: null,
+  order:   null | 1–6,
+  pin:     boolean,
+  debug:   boolean
 }
 ```
 
 ### buildElement(el, config)
 
-1. Beregn `fromVars` og `toVars` ud fra `anim` + `dist`
-2. Vælg `gsap.from()` / `gsap.to()` / `gsap.fromTo()` ud fra `from`/`to`
-3. Opret ScrollTrigger med `start`, `end`, `scrub`, `toggleActions`, `pin`
+1. Beregn `hiddenVars` og `visibleVars` ud fra `anim` + `move`
+2. Vælg `gsap.from()` / `gsap.to()` / `gsap.fromTo()` ud fra `hasFrom`/`hasTo`
+3. Opret ScrollTrigger med `start`, `end`, `scrub`, `toggleActions`, `pin`, `markers`
 
-### buildTimeline(orderedEls)
+### buildTimeline(orderedEls, configs)
 
-1. Sorter efter `st-order-*`
+1. Sorter efter `st-order-*` via forudparsed configs-Map
 2. Byg GSAP timeline med `delay`/`overlap` som position-strings
 3. Tilknyt ét ScrollTrigger til `order-1` elementet
 
@@ -211,7 +214,7 @@ parseClasses(el) → config objekt
 | Scroll-type | scrub frem+tilbage | *(ingen)* |
 | Start | 80% fra top | *(ingen)* |
 | End | 20% fra top | *(ingen)* |
-| Distance | 40px | *(ingen)* |
+| Move | 40px | *(ingen)* |
 | Duration | 600ms | *(ingen)* |
 | Ease | power2.out | *(ingen)* |
 | Retning | from | *(ingen)* |
@@ -221,7 +224,7 @@ parseClasses(el) → config objekt
 ## 6. Constraints
 
 - **Hype DOM**: Alle elementer er sibling-noder. `st-order-*` håndterer sekvens uden nesting.
-- **iframe**: ScrollTrigger kræver adgang til parent-scroll. I iframe-bannere (Adform, Google) skifter ScrollTail automatisk til IntersectionObserver. Scrub drives via `postMessage` fra host-siden (`{ type: 'scrolltail-ratio', ratio: 0–1 }`). Tidsbaserede animationer (`st-once`, `st-forward`, `st-reverse`) bruger IO-threshold direkte. `st-pin` ignoreres i iframes.
+- **iframe**: ScrollTrigger kræver adgang til parent-scroll. I iframe-bannere (Adform, Google) skifter ScrollTail automatisk til IntersectionObserver. Scrub drives via `postMessage` fra host-siden (`{ type: 'scrolltail-ratio', ratio: 0–1 }`). Tidsbaserede animationer (`st-once`, `st-reset`, `st-exit`) bruger IO-threshold direkte. `st-pin` og `st-debug` ignoreres i iframes.
 - **prefers-reduced-motion**: Alle animationer deaktiveres automatisk.
 - **Størrelse**: Mål < 2 KB gzipped for `scrolltail.min.js` (ekskl. GSAP).
 
@@ -262,3 +265,4 @@ ScrollTail/
 |---|---|
 | v1.0 | IntersectionObserver + GSAP, st-fade-up klasser |
 | v2.0 | ScrollTrigger som motor, ny klassestruktur, st-scroll aktivering, from/to/fromTo, start/end som %, pin |
+| v2.1 | Fjern st-parallax-*, omdøb st-dist→st-move og st-forward/reverse→st-reset/exit, tilføj st-debug |

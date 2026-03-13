@@ -12,7 +12,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matc
 // --- Defaults -------------------------------------------------------------
 
 const DEFAULTS = {
-  dist:  40,
+  move:  40,
   dur:   0.6,
   ease:  'power2.out',
   start: 80,
@@ -28,15 +28,11 @@ const ANIM_TYPES  = [
   'st-slide-down',
   'st-slide-left',
   'st-slide-right',
-  'st-parallax-up',
-  'st-parallax-down',
-  'st-parallax-left',
-  'st-parallax-right',
   'st-scale',
   'st-blur',
   'st-rotate'
 ]
-const DIST_MAP    = { 'st-dist-20': 20, 'st-dist-40': 40, 'st-dist-80': 80, 'st-dist-120': 120 }
+const MOVE_MAP    = { 'st-move-20': 20, 'st-move-40': 40, 'st-move-80': 80, 'st-move-120': 120 }
 const DUR_MAP     = { 'st-dur-300': 0.3, 'st-dur-600': 0.6, 'st-dur-1000': 1.0, 'st-dur-1600': 1.6 }
 const EASE_MAP    = {
   'st-ease-linear':  'none',
@@ -84,7 +80,7 @@ function parseClasses(el) {
 
   return {
     anim:    ANIM_TYPES.find(t => cls.contains(t)) ?? null,
-    dist:    pick(DIST_MAP)    ?? DEFAULTS.dist,
+    move:    pick(MOVE_MAP)    ?? DEFAULTS.move,
     dur:     pick(DUR_MAP)     ?? DEFAULTS.dur,
     ease:    pick(EASE_MAP)    ?? DEFAULTS.ease,
     delay:   pick(DELAY_MAP)   ?? DEFAULTS.delay,
@@ -95,9 +91,10 @@ function parseClasses(el) {
     hasTo,
     hasFrom: cls.contains('st-from') || !hasTo,
     once:    cls.contains('st-once'),
-    forward: cls.contains('st-forward'),
-    reverse: cls.contains('st-reverse'),
+    reset:   cls.contains('st-reset'),
+    exit:    cls.contains('st-exit'),
     pin:     cls.contains('st-pin'),
+    debug:   cls.contains('st-debug'),
     scrub:   cls.contains('st-scrub-2') ? 2 : cls.contains('st-scrub-1') ? 1 : true,
     order:   orderMatch ? parseInt(orderMatch.replace('st-order-', ''), 10) : null
   }
@@ -106,17 +103,13 @@ function parseClasses(el) {
 // --- Animation helpers ----------------------------------------------------
 
 // GSAP vars for the "hidden" start state of each animation type
-function hiddenVars(anim, dist) {
+function hiddenVars(anim, move) {
   switch (anim) {
     case 'st-fade':        return { opacity: 0 }
-    case 'st-slide-up':    return { y: dist, opacity: 0 }
-    case 'st-slide-down':  return { y: -dist, opacity: 0 }
-    case 'st-slide-left':  return { x: dist, opacity: 0 }
-    case 'st-slide-right': return { x: -dist, opacity: 0 }
-    case 'st-parallax-up':    return { y: dist }
-    case 'st-parallax-down':  return { y: -dist }
-    case 'st-parallax-left':  return { x: dist }
-    case 'st-parallax-right': return { x: -dist }
+    case 'st-slide-up':    return { y: move, opacity: 0 }
+    case 'st-slide-down':  return { y: -move, opacity: 0 }
+    case 'st-slide-left':  return { x: move, opacity: 0 }
+    case 'st-slide-right': return { x: -move, opacity: 0 }
     case 'st-scale':       return { scale: 0, opacity: 0 }
     case 'st-blur':        return { filter: 'blur(12px)', opacity: 0 }
     case 'st-rotate':      return { rotation: -15, opacity: 0 }
@@ -149,7 +142,7 @@ function edgeDistance(el, anim, offset) {
 // Returns a GSAP tween for one element based on its config.
 
 function buildTween(el, config, paused = true) {
-  const { anim, dist, dur, ease, hasFrom, hasTo, edge } = config
+  const { anim, move, dur, ease, hasFrom, hasTo, edge } = config
   const opts = { duration: dur, ease, paused }
 
   if (edge !== null) {
@@ -158,7 +151,7 @@ function buildTween(el, config, paused = true) {
     return gsap.to(el, { [prop]: target, ...opts })
   }
 
-  const hidden = hiddenVars(anim, dist)
+  const hidden = hiddenVars(anim, move)
   if (hasFrom && hasTo) return gsap.fromTo(el, hidden, { ...visibleVars(hidden), ...opts })
   if (hasTo)            return gsap.to(el,     { ...hidden, ...opts })
   return                       gsap.from(el,   { ...hidden, ...opts })
@@ -166,25 +159,26 @@ function buildTween(el, config, paused = true) {
 
 // --- toggleActions --------------------------------------------------------
 // Maps scroll-type classes to GSAP toggleActions string.
-// Only called when at least one of once/forward/reverse is set.
+// Only called when at least one of once/reset/exit is set.
 
 function toggleActions(config) {
-  if (config.once)    return 'play none none none'
-  if (config.forward) return 'play none none reset'
-  if (config.reverse) return 'reverse play play reverse'
+  if (config.once)  return 'play none none none'
+  if (config.reset) return 'play none none reset'
+  if (config.exit)  return 'reverse play play reverse'
 }
 
 // --- stConfig -------------------------------------------------------------
 // Shared ScrollTrigger config for single elements and timelines.
 
 function stConfig(trigger, config, animation) {
-  const isTimeBased = config.once || config.forward || config.reverse
+  const isTimeBased = config.once || config.reset || config.exit
   return {
     trigger,
     start:   `top ${config.start}%`,
     end:     `bottom ${config.end}%`,
     animation,
-    ...(scrollerEl ? { scroller: scrollerEl } : {}),
+    ...(scrollerEl      ? { scroller: scrollerEl } : {}),
+    ...(config.debug    ? { markers: true }         : {}),
     ...(isTimeBased
       ? { toggleActions: toggleActions(config), once: config.once }
       : { scrub: config.scrub }
@@ -209,11 +203,12 @@ function ioProgress(config, ratio) {
 // --- buildIOObserver ------------------------------------------------------
 // Scrub: registers animation in scrubQueue (driven by postMessage from host).
 //        Falls back to IO with fine-grained thresholds if no postMessage.
-// Time-based (once/forward/reverse): uses a single IO threshold to play/reverse.
+// Time-based (once/reset/exit): uses a single IO threshold to play/reverse.
+
+const IO_STEPS = Array.from({ length: 21 }, (_, i) => i / 20)
 
 function buildIOObserver(el, config, animation) {
-  const isScrub = !config.once && !config.forward && !config.reverse
-  const IO_STEPS = Array.from({ length: 21 }, (_, i) => i / 20)
+  const isScrub = !config.once && !config.reset && !config.exit
 
   if (isScrub) {
     // Primary: postMessage from host page drives progress smoothly
@@ -252,9 +247,9 @@ function buildIOObserver(el, config, animation) {
           if (!leaving) {
             animation.play()
             if (config.once) io.unobserve(el)
-          } else if (config.forward) {
+          } else if (config.reset) {
             animation.pause(0)
-          } else if (config.reverse) {
+          } else if (config.exit) {
             animation.reverse()
           } else if (!config.once) {
             animation.pause(0)
@@ -279,7 +274,8 @@ function buildElement(el, config) {
       end:     `bottom ${config.end}%`,
       pin:     true,
       pinSpacing: true,
-      ...(scrollerEl ? { scroller: scrollerEl } : {})
+      ...(scrollerEl   ? { scroller: scrollerEl } : {}),
+      ...(config.debug ? { markers: true }         : {})
     }))
     return
   }

@@ -49,10 +49,6 @@ Ingen animation = kun opacity.
 | `st-slide-down` | Bevæger sig nedad |
 | `st-slide-left` | Bevæger sig til venstre |
 | `st-slide-right` | Bevæger sig til højre |
-| `st-parallax-up` | Subtil bevægelse opad uden fade |
-| `st-parallax-down` | Subtil bevægelse nedad uden fade |
-| `st-parallax-left` | Subtil bevægelse til venstre uden fade |
-| `st-parallax-right` | Subtil bevægelse til højre uden fade |
 | `st-scale` | Skalerer op fra 0 |
 | `st-blur` | Unblur fra sløret til skarp |
 | `st-rotate` | Roterer ind |
@@ -71,8 +67,8 @@ Ingen animation = kun opacity.
 |---|---|
 | *(ingen)* | Scrub frem og tilbage — **default** |
 | `st-once` | Kører én gang, forbliver synlig |
-| `st-forward` | Kører frem, nulstiller ved scroll tilbage |
-| `st-reverse` | Starter synlig, forsvinder ved scroll ned |
+| `st-reset` | Kører frem, nulstiller ved scroll tilbage |
+| `st-exit` | Starter synlig, forsvinder ved scroll ned |
 
 ### Scrub-lag — blødere scroll-binding
 
@@ -101,14 +97,14 @@ Tallet = % fra toppen af viewport. Høj = lavt på skærmen.
 | `st-end-20` | 20% fra toppen — **default** |
 | `st-end-0` | Toppen af viewport |
 
-### Distance — hvor langt bevæger det sig?
+### Move — hvor langt bevæger det sig?
 
 | Klasse | Afstand |
 |---|---|
-| `st-dist-20` | 20px — subtil |
-| `st-dist-40` | 40px — **default** |
-| `st-dist-80` | 80px — markant |
-| `st-dist-120` | 120px — dramatisk |
+| `st-move-20` | 20px — subtil |
+| `st-move-40` | 40px — **default** |
+| `st-move-80` | 80px — markant |
+| `st-move-120` | 120px — dramatisk |
 
 ### Edge — animér til kanten af container
 
@@ -122,7 +118,7 @@ Kanten bestemmes af animationsretningen (`st-slide-down` → bund, `st-slide-up`
 | `st-edge-10` | 10px fra kanten |
 | `st-edge-20` | 20px fra kanten |
 
-> `st-edge-*` erstatter `st-dist-*` og er altid en `to`-animation (fra placering og ud mod kanten).
+> `st-edge-*` erstatter `st-move-*` og er altid en `to`-animation (fra placering og ud mod kanten).
 
 ### Pin — fastgør elementet mens du scroller
 
@@ -131,6 +127,12 @@ Kanten bestemmes af animationsretningen (`st-slide-down` → bund, `st-slide-up`
 | `st-pin` | Elementet sidder fast mens resten scroller forbi |
 
 Kombiner med `st-start-*` og `st-end-*` for at styre hvor længe det sidder fast.
+
+### Debug — vis trigger-markører
+
+| Klasse | Effekt |
+|---|---|
+| `st-debug` | Viser ScrollTriggers start/end-linjer — kun til test, fjernes inden produktion |
 
 ### Duration — varighed (kun med `st-once`)
 
@@ -178,12 +180,12 @@ st-scroll st-slide-up st-once st-dur-600 st-ease-out
 
 ### Element der glider ind og ud igen
 ```
-st-scroll st-slide-up st-from st-to st-dist-80
+st-scroll st-slide-up st-from st-to st-move-80
 ```
 
 ### Parallax-lignende bevægelse
 ```
-st-scroll st-slide-down st-to st-dist-120 st-scrub-1 st-start-100 st-end-0
+st-scroll st-slide-down st-to st-move-120 st-scrub-1 st-start-100 st-end-0
 ```
 Elementet bevæger sig langsomt nedad mens siden scroller.
 
@@ -222,4 +224,5 @@ Blød scroll-binding:         st-scroll st-slide-up st-scrub-1
 Custom trigger/end:          st-scroll st-fade st-start-50 st-end-0
 Pin:                         st-scroll st-pin st-start-50 st-end-20
 Dock til bund:               st-scroll st-slide-down st-edge-5
+Debug triggers:              st-scroll st-fade st-debug
 ```
