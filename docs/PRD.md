@@ -16,7 +16,7 @@ Inspireret af Tailwinds utility-first tilgang: kombiner præcise klasser til pr�
 | GSAP ScrollTrigger | Scroll-binding, scrub, pin, toggleActions |
 | ScrollTail | Klasse-parser + konfigurationslag |
 
-ScrollTrigger er **required** i v2. IntersectionObserver bruges ikke længere.
+ScrollTrigger er **required** i v2. IntersectionObserver bruges som fallback i iframe-miljøer (adservere), kombineret med postMessage-scrub fra host-siden.
 
 ### CDN-setup
 ```html
@@ -112,7 +112,7 @@ st-slide-left + st-edge-*   → venstre kant
 st-slide-right + st-edge-*  → højre kant
 ```
 
-Implementering i `calcEdgeDist(el, anim, edgeOffset)`:
+Implementering i `edgeDistance(el, anim, offset)`:
 ```javascript
 case 'st-slide-down':  return container.offsetHeight - (el.offsetTop + el.offsetHeight) - edgeOffset
 case 'st-slide-up':    return -(el.offsetTop - edgeOffset)
@@ -221,7 +221,7 @@ parseClasses(el) → config objekt
 ## 6. Constraints
 
 - **Hype DOM**: Alle elementer er sibling-noder. `st-order-*` håndterer sekvens uden nesting.
-- **iframe**: ScrollTrigger kræver adgang til parent-scroll. I rene iframe-bannere (Adform, Google) uden ScrollTrigger virker `st-once` med IntersectionObserver som fallback.
+- **iframe**: ScrollTrigger kræver adgang til parent-scroll. I iframe-bannere (Adform, Google) skifter ScrollTail automatisk til IntersectionObserver. Scrub drives via `postMessage` fra host-siden (`{ type: 'scrolltail-ratio', ratio: 0–1 }`). Tidsbaserede animationer (`st-once`, `st-forward`, `st-reverse`) bruger IO-threshold direkte. `st-pin` ignoreres i iframes.
 - **prefers-reduced-motion**: Alle animationer deaktiveres automatisk.
 - **Størrelse**: Mål < 2 KB gzipped for `scrolltail.min.js` (ekskl. GSAP).
 
@@ -230,10 +230,11 @@ parseClasses(el) → config objekt
 ## 7. Public API
 
 ```javascript
-ScrollTail.refresh()      // Genscanner DOM og genopretter alle ScrollTriggers
-ScrollTail.destroy()      // Fjerner alle ScrollTriggers og tweens
-ScrollTail.pause()        // Pauser alle animationer
-ScrollTail.resume()       // Genoptager alle animationer
+ScrollTail.refresh()        // Genscanner DOM og genopretter alle ScrollTriggers
+ScrollTail.destroy()        // Fjerner alle ScrollTriggers og tweens
+ScrollTail.pause()          // Pauser alle animationer
+ScrollTail.resume()         // Genoptager alle animationer
+ScrollTail.setScroller(el)  // Sætter custom scroll-container (fx indre banner-div)
 ```
 
 ---
@@ -249,11 +250,6 @@ ScrollTail/
 ├── docs/
 │   ├── PRD.md             Dette dokument
 │   └── CHEATSHEET.md      Designerreference
-├── examples/
-│   ├── basic.html         Fade, slide, scale
-│   ├── scrub.html         Scroll-binding og lag
-│   ├── pin.html           Pin-eksempel
-│   └── sequence.html      st-order-* sekvens
 ├── package.json
 └── vite.config.js
 ```
