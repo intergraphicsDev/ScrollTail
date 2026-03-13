@@ -1,6 +1,6 @@
 {
   "name": "scrolltail",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Class-based scroll animation library for HTML5 banners",
   "main": "dist/scrolltail.min.js",
   "scripts": {
