@@ -9,6 +9,17 @@
 const isIframe      = window.self !== window.top
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+// --- Defaults -------------------------------------------------------------
+
+const DEFAULTS = {
+  dist:  40,
+  dur:   0.6,
+  ease:  'power2.out',
+  start: 80,
+  end:   20,
+  delay: 0
+}
+
 // --- Class maps -----------------------------------------------------------
 
 const ANIM_TYPES  = [
@@ -36,7 +47,7 @@ const EASE_MAP    = {
   'st-ease-spring':  'elastic.out(1, 0.5)'
 }
 const DELAY_MAP   = { 'st-delay-100': 0.1, 'st-delay-200': 0.2, 'st-delay-300': 0.3, 'st-delay-500': 0.5 }
-const OVERLAP_MAP = { 'st-overlap-100': -0.1, 'st-overlap-200': -0.2, 'st-overlap-300': -0.3, 'st-overlap-500': -0.5 }
+const OVERLAP_MAP = { 'st-overlap-100': 0.1, 'st-overlap-200': 0.2, 'st-overlap-300': 0.3, 'st-overlap-500': 0.5 }
 const START_MAP   = { 'st-start-100': 100, 'st-start-80': 80, 'st-start-50': 50, 'st-start-20': 20 }
 const END_MAP     = { 'st-end-80': 80, 'st-end-50': 50, 'st-end-20': 20, 'st-end-0': 0 }
 const EDGE_MAP    = { 'st-edge-0': 0, 'st-edge-5': 5, 'st-edge-10': 10, 'st-edge-20': 20 }
@@ -52,6 +63,7 @@ let scrollerEl = null // Custom scroller element (e.g. inner banner div)
 
 // In iframe mode: listen for ratio from host page (sent via postMessage).
 // Host page should send { type: 'scrolltail-ratio', ratio: 0–1 } on scroll.
+// scrubQueue is cleared on destroy(), so the listener is safely inert between sessions.
 if (isIframe) {
   window.addEventListener('message', e => {
     if (e.data?.type !== 'scrolltail-ratio' || isPaused) return
@@ -72,16 +84,16 @@ function parseClasses(el) {
 
   return {
     anim:    ANIM_TYPES.find(t => cls.contains(t)) ?? null,
-    dist:    pick(DIST_MAP)    ?? 40,
-    dur:     pick(DUR_MAP)     ?? 0.6,
-    ease:    pick(EASE_MAP)    ?? 'power2.out',
-    delay:   pick(DELAY_MAP)   ?? 0,
+    dist:    pick(DIST_MAP)    ?? DEFAULTS.dist,
+    dur:     pick(DUR_MAP)     ?? DEFAULTS.dur,
+    ease:    pick(EASE_MAP)    ?? DEFAULTS.ease,
+    delay:   pick(DELAY_MAP)   ?? DEFAULTS.delay,
     overlap: pick(OVERLAP_MAP) ?? null,
-    start:   pick(START_MAP)   ?? 80,
-    end:     pick(END_MAP)     ?? 20,
+    start:   pick(START_MAP)   ?? DEFAULTS.start,
+    end:     pick(END_MAP)     ?? DEFAULTS.end,
     edge:    pick(EDGE_MAP)    ?? null,
     hasTo,
-    hasFrom: cls.contains('st-from') || !hasTo,  // default: from
+    hasFrom: cls.contains('st-from') || !hasTo,
     once:    cls.contains('st-once'),
     forward: cls.contains('st-forward'),
     reverse: cls.contains('st-reverse'),
@@ -154,12 +166,12 @@ function buildTween(el, config, paused = true) {
 
 // --- toggleActions --------------------------------------------------------
 // Maps scroll-type classes to GSAP toggleActions string.
+// Only called when at least one of once/forward/reverse is set.
 
 function toggleActions(config) {
   if (config.once)    return 'play none none none'
   if (config.forward) return 'play none none reset'
   if (config.reverse) return 'reverse play play reverse'
-  return 'play reverse reverse reverse'
 }
 
 // --- stConfig -------------------------------------------------------------
@@ -187,7 +199,7 @@ function stConfig(trigger, config, animation) {
 // st-from: ratio startRatio→1 maps to progress 0→1 (animate in as element enters)
 function ioProgress(config, ratio) {
   if (config.hasTo && !config.hasFrom) {
-    const endRatio = Math.max((config.end ?? 20) / 100, 0.01)
+    const endRatio = Math.max(config.end / 100, 0.01)
     return Math.min(1, Math.max(0, (1 - ratio) / (1 - endRatio)))
   }
   const startRatio = Math.min((100 - config.start) / 100, 0.99)
@@ -285,17 +297,17 @@ function buildElement(el, config) {
 // --- buildTimeline --------------------------------------------------------
 // Groups st-order-* elements into a single sequenced GSAP timeline.
 
-function buildTimeline(orderedEls) {
-  const sorted      = [...orderedEls].sort((a, b) => parseClasses(a).order - parseClasses(b).order)
+function buildTimeline(orderedEls, configs) {
+  const sorted      = [...orderedEls].sort((a, b) => configs.get(a).order - configs.get(b).order)
   const firstEl     = sorted[0]
-  const firstConfig = parseClasses(firstEl)
+  const firstConfig = configs.get(firstEl)
 
   const tl = gsap.timeline({ paused: true })
 
   sorted.forEach(el => {
-    const config   = parseClasses(el)
+    const config   = configs.get(el)
     const tween    = buildTween(el, config, false)
-    const position = config.overlap !== null ? `${config.overlap}`
+    const position = config.overlap !== null ? `-=${config.overlap}`
                    : config.delay > 0        ? `+=${config.delay}`
                    : undefined
     tl.add(tween, position)
@@ -323,11 +335,12 @@ function init() {
   const allEls = [...document.querySelectorAll('.st-scroll')]
   if (!allEls.length) return
 
-  const orderedEls = allEls.filter(el => parseClasses(el).order !== null)
-  const singleEls  = allEls.filter(el => parseClasses(el).order === null)
+  const configs    = new Map(allEls.map(el => [el, parseClasses(el)]))
+  const orderedEls = allEls.filter(el => configs.get(el).order !== null)
+  const singleEls  = allEls.filter(el => configs.get(el).order === null)
 
-  singleEls.forEach(el => buildElement(el, parseClasses(el)))
-  if (orderedEls.length) buildTimeline(orderedEls)
+  singleEls.forEach(el => buildElement(el, configs.get(el)))
+  if (orderedEls.length) buildTimeline(orderedEls, configs)
 }
 
 // --- Public API -----------------------------------------------------------
@@ -354,6 +367,7 @@ function destroy() {
   observers  = []
   animations = []
   scrubQueue = []
+  isPaused   = false
 }
 
 // --- Boot -----------------------------------------------------------------
